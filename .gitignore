@@ -2,6 +2,11 @@
 data/
 logs/
 lightning_logs/
+checkpoints/
+checkpoints_final/
+checkpoints_final_v3/
+checkpoints_segmentation/
+checkpoints_v2/
 analysis_history.db
 *.png # this will ignore all png files in the root, adjust if you have important pngs
 .env # often contains sensitive info
