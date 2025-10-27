@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DermAI - Advanced Lesion Analysis</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tsparticles@2/tsparticles.bundle.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #292524; /* stone-800 */
+            --primary-hover: #1c1917; /* stone-900 */
+            --background-color: #f5f5f4; /* stone-100 */
+            --card-background: #ffffff;
+            --text-primary: #1c1917; /* stone-900 */
+            --text-secondary: #57534e; /* stone-600 */
+            --border-color: #e7e5e4; /* stone-200 */
+        }
+        html { scroll-behavior: smooth; }
+        body { font-family: 'Inter', sans-serif; background-color: var(--background-color); color: var(--text-secondary); }
+        button:disabled { cursor: not-allowed; opacity: 0.6; }
+
+        #particles-container { position: absolute; width: 100%; height: 100%; top: 0; left: 0; z-index: 0; }
+        
+        .page-transition { transition: opacity 0.4s ease-in-out, transform 0.4s ease-in-out; }
+        .page-enter { opacity: 0; transform: translateY(20px); }
+        .page-exit-active { opacity: 0; transform: translateY(-20px); }
+        .animate-reveal { opacity: 0; transform: translateY(30px); transition: opacity 0.6s ease-out, transform 0.6s ease-out; }
+        .animate-reveal.is-visible { opacity: 1; transform: translateY(0); }
+
+        .scanner-container { position: relative; width: 150px; height: 150px; }
+        .scanner-pulse { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 2px solid var(--primary-color); border-radius: 50%; opacity: 0; animation: scanner-pulse 2.5s cubic-bezier(0, 0, 0.2, 1) infinite; }
+        .scanner-pulse:nth-child(2) { animation-delay: 0.8s; }
+        .scanner-pulse:nth-child(3) { animation-delay: 1.6s; }
+        .scanner-core { position: absolute; top: 50%; left: 50%; width: 20px; height: 20px; background-color: var(--primary-color); border-radius: 50%; transform: translate(-50%, -50%); animation: scanner-core-pulse 2.5s ease-in-out infinite; }
+        @keyframes scanner-pulse { 0% { transform: scale(0); opacity: 0; } 50% { opacity: 1; } 100% { transform: scale(1.2); opacity: 0; } }
+        @keyframes scanner-core-pulse { 0%, 100% { transform: translate(-50%, -50%) scale(1); } 50% { transform: translate(-50%, -50%) scale(0.8); } }
+        .loading-text { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+        @keyframes pulse { 50% { opacity: .5; } }
+    </style>
+</head>
+<body class="antialiased">
+
+    <header id="globalHeader" class="bg-stone-50/90 backdrop-blur-lg shadow-sm border-b border-stone-200 sticky top-0 z-50 hidden">
+        <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center h-16">
+            <div class="flex items-center space-x-3 cursor-pointer" onclick="showPage('analyzer'); resetAnalysisView();">
+                <svg class="h-8 w-8 text-stone-800" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 15c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3z"/></svg>
+                <h1 class="text-xl font-bold text-stone-900 tracking-tight">DermAI</h1>
+            </div>
+            <div class="flex items-center space-x-2">
+                <a href="#analyzer" onclick="resetAnalysisView()" class="nav-link px-4 py-2 text-sm font-semibold text-stone-600 hover:text-stone-900 hover:bg-stone-200 rounded-lg transition-all">New Analysis</a>
+                <a href="#history" class="nav-link px-4 py-2 text-sm font-semibold text-stone-600 hover:text-stone-900 hover:bg-stone-200 rounded-lg transition-all">History</a>
+                <button id="logoutBtn" class="px-4 py-2 text-sm font-semibold text-red-600 hover:bg-red-50 rounded-lg transition-all">Logout</button>
+            </div>
+        </nav>
+    </header>
+
+    <div id="landingPage" class="page page-transition">
+        <div class="relative bg-stone-50 overflow-hidden">
+            <div id="particles-container"></div>
+            <div class="relative z-10 max-w-7xl mx-auto">
+                <div class="py-24 sm:py-32 px-6 lg:px-8 text-center animate-reveal is-visible">
+                    <h1 class="text-4xl lg:text-6xl font-extrabold text-stone-900 tracking-tight">AI-Powered Dermatological Analysis</h1>
+                    <p class="mt-6 text-lg text-stone-600 max-w-2xl mx-auto">Leverage a state-of-the-art hybrid AI system for advanced, reliable insights into dermatological lesions.</p>
+                    <div class="mt-10">
+                        <a href="#login" id="getStartedBtn" class="rounded-lg bg-stone-800 px-8 py-4 text-lg font-semibold text-white shadow-lg hover:bg-stone-900 transition-all transform hover:scale-105">Get Started</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <section id="how-it-works" class="py-20 sm:py-24 bg-white">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center">
+                    <h2 class="text-3xl font-extrabold text-stone-900 tracking-tight">How It Works</h2>
+                    <p class="mt-4 max-w-2xl mx-auto text-lg text-stone-500">A simple, three-step process to gain deeper insights.</p>
+                </div>
+                <div class="mt-16 grid md:grid-cols-3 gap-12 text-center">
+                    <div class="animate-reveal">
+                        <div class="flex items-center justify-center h-16 w-16 rounded-full bg-stone-100 text-stone-800 mx-auto"><svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg></div>
+                        <h3 class="mt-6 text-xl font-bold">1. Upload Image</h3>
+                        <p class="mt-2 text-base text-stone-500">Securely upload a high-resolution image of the lesion along with patient metadata.</p>
+                    </div>
+                    <div class="animate-reveal" style="transition-delay: 200ms;">
+                        <div class="flex items-center justify-center h-16 w-16 rounded-full bg-stone-100 text-stone-800 mx-auto"><svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M12 6V3m0 18v-3" /></svg></div>
+                        <h3 class="mt-6 text-xl font-bold">2. AI Analysis</h3>
+                        <p class="mt-2 text-base text-stone-500">Our hybrid AI system analyzes the image, generating a heatmap and a preliminary diagnosis.</p>
+                    </div>
+                    <div class="animate-reveal" style="transition-delay: 400ms;">
+                        <div class="flex items-center justify-center h-16 w-16 rounded-full bg-stone-100 text-stone-800 mx-auto"><svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg></div>
+                        <h3 class="mt-6 text-xl font-bold">3. Review Report</h3>
+                        <p class="mt-2 text-base text-stone-500">Receive a comprehensive report with data visualizations and an AI-generated synthesis.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+    
+    <div id="loginPage" class="page page-transition hidden">
+        <div class="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-stone-50 to-stone-100">
+            <div class="bg-white rounded-2xl shadow-2xl p-8 sm:p-12 w-full max-w-md text-center animate-reveal is-visible">
+                <div id="emailStep">
+                    <h1 class="text-3xl font-bold tracking-tight text-stone-900">Secure Login</h1>
+                    <p class="text-stone-600 my-8">Enter your professional email to receive a secure, one-time verification code.</p>
+                    <form id="emailForm"><input type="email" id="emailInput" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-stone-500 focus:border-stone-500 transition" required placeholder="name@clinic.com"><button id="sendOtpBtn" type="submit" class="w-full mt-4 p-3 bg-stone-800 text-white rounded-lg font-semibold hover:bg-stone-900 transition-transform transform hover:scale-105">Send Code</button></form>
+                </div>
+                <div id="otpStep" class="hidden">
+                    <h1 class="text-3xl font-bold tracking-tight text-stone-900">Enter Code</h1>
+                    <p class="text-stone-600 mt-2 mb-4">A 6-digit code was sent to:</p>
+                    <p id="userEmailDisplay" class="font-medium text-stone-800 mb-8"></p>
+                    <form id="otpForm"><input type="text" id="otpInput" class="w-full p-3 border rounded-lg text-center tracking-[0.5em] text-2xl font-mono focus:ring-2 focus:ring-stone-500 focus:border-stone-500 transition" maxlength="6" required><button id="verifyOtpBtn" type="submit" class="w-full mt-4 p-3 bg-stone-800 text-white rounded-lg font-semibold hover:bg-stone-900 transition-transform transform hover:scale-105">Verify & Proceed</button></form>
+                    <button id="backToEmailBtn" class="text-sm text-stone-500 hover:underline mt-6">Use a different email</button>
+                </div>
+                <div id="messageArea" class="mt-4 text-sm min-h-[20px] font-medium"></div>
+            </div>
+        </div>
+    </div>
+        
+    <main id="analyzerPage" class="page page-transition hidden max-w-7xl mx-auto p-4 sm:p-6 lg:px-8 lg:py-12">
+        <div id="uploadSection" class="bg-white rounded-2xl shadow-xl p-8 animate-reveal is-visible">
+            <h2 class="text-3xl font-bold text-stone-900 mb-6 tracking-tight">New Analysis</h2>
+            <form id="patientForm" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div><label for="age" class="block text-sm font-medium mb-1">Age</label><input type="number" id="age" class="w-full mt-1 p-2 border rounded-lg focus:ring-1 focus:ring-stone-500" required></div>
+                <div><label for="sex" class="block text-sm font-medium mb-1">Sex</label><select id="sex" class="w-full mt-1 p-2 border rounded-lg focus:ring-1 focus:ring-stone-500" required><option value="" disabled selected>Select...</option><option value="male">Male</option><option value="female">Female</option></select></div>
+                <div><label for="localization" class="block text-sm font-medium mb-1">Location</label><select id="localization" class="w-full mt-1 p-2 border rounded-lg focus:ring-1 focus:ring-stone-500" required><option value="" disabled selected>Select...</option><option value="torso">Torso</option><option value="lower extremity">Lower Extremity</option><option value="upper extremity">Upper Extremity</option><option value="back">Back</option><option value="chest">Chest</option><option value="face">Face</option><option value="neck">Neck</option><option value="unknown">Other</option></select></div>
+            </form>
+            <hr class="my-8 border-stone-200">
+            <div id="dropzone" class="border-2 border-dashed border-stone-300 rounded-xl p-12 text-center cursor-pointer hover:border-stone-500 hover:bg-stone-50 transition-colors">
+                <svg class="mx-auto h-12 w-12 text-stone-400" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true"><path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                <p class="mt-4 text-lg font-semibold text-stone-800">Click to upload or drag and drop</p>
+                <p class="mt-1 text-sm text-stone-500">PNG or JPG file</p>
+            </div>
+            <input type="file" id="fileInput" class="hidden" accept="image/png, image/jpeg">
+        </div>
+        <div id="resultSection" class="hidden mt-12">
+            <div id="resultContent"></div>
+        </div>
+    </main>
+    
+    <main id="historyPage" class="page page-transition hidden max-w-7xl mx-auto p-4 sm:p-6 lg:px-8 lg:py-12">
+        <div class="flex justify-between items-center mb-6 animate-reveal is-visible">
+            <h2 class="text-3xl font-bold text-stone-900 tracking-tight">Analysis History</h2>
+            <button onclick="showPage('analyzer'); resetAnalysisView();" class="rounded-lg bg-stone-800 px-5 py-2.5 font-semibold text-white shadow-sm hover:bg-stone-900 transition-transform transform hover:scale-105">New Analysis</button>
+        </div>
+        <div id="historyListContainer" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+        <div id="historyLoading" class="hidden text-center py-12"><div class="scanner-container mx-auto"><div class="scanner-pulse"></div><div class="scanner-pulse"></div><div class="scanner-pulse"></div><div class="scanner-core"></div></div><p class="mt-4">Loading history...</p></div>
+        <div id="historyEmpty" class="hidden text-center py-20 bg-white rounded-2xl shadow-xl"><svg class="mx-auto h-12 w-12 text-stone-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" /></svg><h3 class="mt-2 text-xl font-semibold text-stone-900">No History</h3><p class="mt-1 text-stone-500">Get started by running your first analysis.</p></div>
+    </main>
+
+    <template id="historyCardTemplate">
+        <div class="bg-white rounded-2xl shadow p-5 flex flex-col cursor-pointer transition-all duration-300 hover:shadow-xl hover:scale-[1.02]">
+            <img data-id="thumbnail" class="w-full h-40 object-cover rounded-lg mb-4 bg-stone-100">
+            <div class="flex-grow">
+                <p class="font-bold text-xl text-stone-800" data-id="finalLabel"></p>
+                <p class="text-sm text-stone-500 mt-1" data-id="date"></p>
+            </div>
+            <span class="mt-4 px-3 py-1 text-sm font-semibold rounded-full self-start" data-id="status"></span>
+        </div>
+    </template>
+
+<script>
+    let currentUserEmail = '';
+    let currentAnalysisId = null;
+    let loadingInterval;
+    const LESION_OPTIONS = ['MEL', 'NV', 'BCC', 'AK', 'BKL', 'DF', 'VASC', 'SCC', 'UNK'];
+    
+    const dom = {
+        pages: { landing: document.getElementById('landingPage'), login: document.getElementById('loginPage'), analyzer: document.getElementById('analyzerPage'), history: document.getElementById('historyPage') },
+        globalHeader: document.getElementById('globalHeader'),
+        getStartedBtn: document.getElementById('getStartedBtn'),
+        navLinks: document.querySelectorAll('.nav-link'),
+        logoutBtn: document.getElementById('logoutBtn'),
+        auth: { emailForm: document.getElementById('emailForm'), otpForm: document.getElementById('otpForm'), emailInput: document.getElementById('emailInput'), otpInput: document.getElementById('otpInput'), sendBtn: document.getElementById('sendOtpBtn'), verifyBtn: document.getElementById('verifyOtpBtn'), backBtn: document.getElementById('backToEmailBtn'), emailDisplay: document.getElementById('userEmailDisplay'), messageArea: document.getElementById('messageArea'), emailStep: document.getElementById('emailStep'), otpStep: document.getElementById('otpStep') },
+        analyzer: { uploadSection: document.getElementById('uploadSection'), resultSection: document.getElementById('resultSection'), resultContent: document.getElementById('resultContent'), patientForm: document.getElementById('patientForm'), dropzone: document.getElementById('dropzone'), fileInput: document.getElementById('fileInput') },
+        history: { container: document.getElementById('historyListContainer'), loading: document.getElementById('historyLoading'), empty: document.getElementById('historyEmpty') },
+        templates: { historyCard: document.getElementById('historyCardTemplate') }
+    };
+
+    let activePageKey = 'landing';
+    function showPage(pageKey) {
+        if (pageKey === activePageKey) return;
+        const currentPage = dom.pages[activePageKey];
+        const nextPage = dom.pages[pageKey];
+        currentPage.classList.add('page-exit-active');
+        setTimeout(() => {
+            currentPage.classList.add('hidden');
+            currentPage.classList.remove('page-exit-active');
+            nextPage.classList.remove('hidden');
+            nextPage.classList.add('page-enter');
+            requestAnimationFrame(() => { nextPage.classList.remove('page-enter'); });
+            activePageKey = pageKey;
+            dom.globalHeader.classList.toggle('hidden', pageKey === 'landing' || pageKey === 'login');
+            window.scrollTo(0, 0);
+            if (pageKey === 'history') fetchAndDisplayHistory();
+            // Do NOT reset analyzer view here; let viewHistoryItem or nav clicks handle rendering if needed.
+        }, 400);
+    }
+    
+    function resetAnalysisView() {
+        // Only reset if the current view is not already the upload section
+        if (!dom.analyzer.uploadSection.classList.contains('hidden')) return; 
+        
+        dom.analyzer.uploadSection.classList.remove('hidden');
+        dom.analyzer.resultSection.classList.add('hidden');
+        dom.analyzer.patientForm.reset();
+        dom.analyzer.fileInput.value = '';
+    }
+
+    function viewHistoryItem(item) {
+        showPage('analyzer'); 
+        setTimeout(() => { // Wait for page transition
+            renderAnalysisResult(item);
+            dom.analyzer.uploadSection.classList.add('hidden');
+            dom.analyzer.resultSection.classList.remove('hidden');
+        }, 450); // Slightly longer than transition
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) { entry.target.classList.add('is-visible'); observer.unobserve(entry.target); }
+            });
+        }, { threshold: 0.1 });
+        document.querySelectorAll('.animate-reveal').forEach(el => observer.observe(el));
+        
+        tsParticles.load("particles-container", {
+            fpsLimit: 60, interactivity: { events: { onHover: { enable: true, mode: "repulse" }, resize: true }, modes: { repulse: { distance: 100, duration: 0.4 } } },
+            particles: { color: { value: "#d6d3d1" }, links: { color: "#a8a29e", distance: 150, enable: true, opacity: 0.5, width: 1 }, collisions: { enable: true }, move: { direction: "none", enable: true, outModes: { default: "bounce" }, random: false, speed: 1, straight: false }, number: { density: { enable: true, area: 800 }, value: 80 }, opacity: { value: 0.5 }, shape: { type: "circle" }, size: { value: { min: 1, max: 5 } } }, detectRetina: true,
+        });
+
+        dom.getStartedBtn.addEventListener('click', (e) => { e.preventDefault(); showPage('login'); });
+        dom.navLinks.forEach(link => { link.addEventListener('click', (e) => { e.preventDefault(); 
+            const targetPage = e.currentTarget.getAttribute('href').substring(1);
+            if(targetPage === 'analyzer') resetAnalysisView(); // Reset only if clicking "New Analysis"
+            showPage(targetPage); 
+        }); });
+        dom.logoutBtn.addEventListener('click', handleLogout);
+        dom.auth.emailForm.addEventListener('submit', handleSendOtp);
+        dom.auth.otpForm.addEventListener('submit', handleVerifyOtp);
+        dom.auth.backBtn.addEventListener('click', () => { dom.auth.emailStep.classList.remove('hidden'); dom.auth.otpStep.classList.add('hidden'); });
+        
+        const setupDragAndDrop = () => {
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eName => dom.analyzer.dropzone.addEventListener(eName, e => {e.preventDefault(); e.stopPropagation();}, false));
+            ['dragenter', 'dragover'].forEach(eName => dom.analyzer.dropzone.addEventListener(eName, () => dom.analyzer.dropzone.classList.add('bg-stone-100', 'border-stone-500')));
+            ['dragleave', 'drop'].forEach(eName => dom.analyzer.dropzone.addEventListener(eName, () => dom.analyzer.dropzone.classList.remove('bg-stone-100', 'border-stone-500')));
+            dom.analyzer.dropzone.addEventListener('drop', e => { if (e.dataTransfer.files.length) handleFileUpload(e.dataTransfer.files[0]); });
+            dom.analyzer.dropzone.addEventListener('click', () => dom.analyzer.fileInput.click());
+            dom.analyzer.fileInput.addEventListener('change', e => { if (e.target.files.length) handleFileUpload(e.target.files[0]); });
+        };
+        setupDragAndDrop();
+    });
+
+    async function handleSendOtp(e) { e.preventDefault(); dom.auth.sendBtn.disabled = true; dom.auth.messageArea.textContent = 'Sending...'; try { const res = await fetch('/send_otp', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({email: dom.auth.emailInput.value}) }); if (!res.ok) throw new Error((await res.json()).detail); currentUserEmail = dom.auth.emailInput.value; dom.auth.emailDisplay.textContent = currentUserEmail; dom.auth.emailStep.classList.add('hidden'); dom.auth.otpStep.classList.remove('hidden'); dom.auth.messageArea.textContent = ''; } catch (err) { dom.auth.messageArea.textContent = err.message; dom.auth.messageArea.classList.add('text-red-600'); } finally { dom.auth.sendBtn.disabled = false; } }
+    async function handleVerifyOtp(e) { e.preventDefault(); dom.auth.verifyBtn.disabled = true; dom.auth.messageArea.textContent = 'Verifying...'; try { const res = await fetch('/verify_otp', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({email: currentUserEmail, otp: dom.auth.otpInput.value}) }); if (!res.ok) throw new Error((await res.json()).detail); showPage('analyzer'); resetAnalysisView(); } catch (err) { dom.auth.messageArea.textContent = err.message; dom.auth.messageArea.classList.add('text-red-600'); } finally { dom.auth.verifyBtn.disabled = false; } }
+    function handleLogout() { currentUserEmail = ''; dom.auth.emailForm.reset(); dom.auth.otpForm.reset(); dom.auth.emailStep.classList.remove('hidden'); dom.auth.otpStep.classList.add('hidden'); showPage('landing'); }
+
+    async function handleFileUpload(file) {
+        if (!dom.analyzer.patientForm.checkValidity()) { dom.analyzer.patientForm.reportValidity(); return; }
+        dom.analyzer.uploadSection.classList.add('hidden');
+        dom.analyzer.resultSection.classList.remove('hidden');
+        const loadingMessages = ["Convening AI panel...", "Analyzing pixel data...", "Cross-referencing databases...", "Generating diagnostic heatmap...", "Finalizing consultant report..."];
+        let msgIndex = 0;
+        dom.analyzer.resultContent.innerHTML = `<div class="flex flex-col items-center justify-center min-h-[60vh] space-y-6"><div class="scanner-container"><div class="scanner-pulse"></div><div class="scanner-pulse"></div><div class="scanner-pulse"></div><div class="scanner-core"></div></div><p id="loadingText" class="loading-text text-lg font-medium text-stone-700"></p></div>`;
+        const loadingTextElement = document.getElementById('loadingText');
+        loadingTextElement.textContent = loadingMessages[msgIndex];
+        loadingInterval = setInterval(() => { msgIndex = (msgIndex + 1) % loadingMessages.length; loadingTextElement.textContent = loadingMessages[msgIndex]; }, 2500);
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('age', document.getElementById('age').value);
+        formData.append('sex', document.getElementById('sex').value);
+        formData.append('localization', document.getElementById('localization').value);
+        formData.append('user_email', currentUserEmail);
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 100000); // 100s timeout
+        try {
+            const response = await fetch('/predict_augmented/', { method: 'POST', body: formData, signal: controller.signal });
+            clearTimeout(timeoutId);
+            if (!response.ok) { const errData = await response.json().catch(()=>({})); throw new Error(errData.detail || `Server error: ${response.status}`); }
+            renderAnalysisResult(await response.json());
+        } catch (error) {
+            renderErrorView(error.name === 'AbortError' ? 'Analysis timed out. Please try again.' : error.message);
+        } finally {
+            clearInterval(loadingInterval);
+        }
+    }
+
+    function renderAnalysisResult(result) {
+        clearInterval(loadingInterval); // Ensure loading stops
+        currentAnalysisId = result.id;
+        const rawData = JSON.parse(result.raw_data_json || '{}');
+        const aiPred = rawData.internal_specialist_analysis?.prediction || 'N/A';
+        const isCorrected = !!result.corrected_label;
+        const finalLabel = isCorrected ? result.corrected_label : aiPred;
+        let lesionOptionsHTML = LESION_OPTIONS.map(opt => `<option value="${opt}" ${opt === finalLabel ? 'selected' : ''}>${opt}</option>`).join('');
+        
+        dom.analyzer.resultContent.innerHTML = `<div class="animate-reveal is-visible"><div class="flex justify-between items-start mb-6"><div><h2 class="text-3xl font-bold text-stone-900 tracking-tight">Analysis Report #${result.id}</h2><p class="text-sm text-stone-500 mt-1">${new Date(result.analysis_timestamp).toLocaleString()}</p></div><button onclick="resetAnalysisView()" class="rounded-lg bg-stone-800 px-5 py-2.5 font-semibold text-white shadow-sm hover:bg-stone-900 transition-transform transform hover:scale-105">Analyze Another</button></div>
+        <div class="grid lg:grid-cols-2 gap-8">
+            <div class="space-y-8">
+                <div class="bg-white p-6 rounded-2xl shadow-xl"><h3 class="text-xl font-bold text-stone-900 mb-4">Image & Heatmap</h3><div class="bg-stone-100 rounded-lg p-2"><img src="${result.heatmap_image_base64}" class="w-full rounded-lg shadow-inner"></div></div>
+                <div class="bg-white p-6 rounded-2xl shadow-xl"><h3 class="text-xl font-bold text-stone-900 mb-4">Original Raw AI Data</h3><div class="bg-stone-100 p-4 rounded-lg border border-stone-200 text-xs max-h-96 overflow-y-auto"><pre class="whitespace-pre-wrap break-words">${JSON.stringify(rawData, null, 2)}</pre></div></div>
+            </div>
+            <div class="space-y-8">
+                <div class="bg-white border-2 border-stone-800 rounded-2xl p-6 shadow-2xl"><h4 class="text-base font-semibold text-stone-800 mb-2">${isCorrected ? 'Definitive Diagnosis' : 'AI Preliminary Prediction'}</h4><p class="text-4xl font-extrabold tracking-tight text-stone-900">${finalLabel}</p>${isCorrected ? `<p class="text-sm text-stone-500 mt-1">Original AI prediction: ${aiPred}</p>` : ''}</div>
+                <div class="bg-white p-6 rounded-2xl shadow-xl"><h3 class="text-xl font-bold text-stone-900 mb-3">Consultant's Synthesis</h3><p class="text-base text-stone-700 whitespace-pre-wrap">${result.final_report}</p></div>
+                <div class="bg-white p-6 rounded-2xl shadow-xl"><h3 class="font-bold text-stone-900 mb-4">Manual Correction</h3><div class="flex gap-4"><select id="correctionInput" class="w-full p-2 border rounded-lg focus:ring-1 focus:ring-stone-500">${lesionOptionsHTML}</select><button id="submitCorrectionBtn" class="px-5 py-2 bg-stone-800 text-white rounded-lg font-semibold hover:bg-stone-900 transition-transform transform hover:scale-105">Save</button></div><p id="correctionMessage" class="text-sm mt-2"></p></div>
+            </div></div></div>`;
+        
+        // Re-attach listener specifically for the newly created button
+        document.getElementById('submitCorrectionBtn').addEventListener('click', handleCorrectionSubmit);
+    }
+    
+    function renderErrorView(errorMessage) {
+        clearInterval(loadingInterval);
+        dom.analyzer.resultContent.innerHTML = `<div class="text-center py-20 bg-white rounded-2xl shadow-xl animate-reveal is-visible"><h2 class="text-2xl font-bold text-red-600 mb-4">Analysis Failed</h2><p class="text-stone-700 mb-6">${errorMessage}</p><button onclick="resetAnalysisView()" class="rounded-lg bg-stone-800 px-5 py-2.5 font-semibold text-white shadow-sm hover:bg-stone-900 transition-transform transform hover:scale-105">Try Again</button></div>`;
+    }
+
+    async function fetchAndDisplayHistory() {
+        dom.history.loading.classList.remove('hidden'); dom.history.empty.classList.add('hidden'); dom.history.container.innerHTML = '';
+        try {
+            const response = await fetch(`/get_history?email=${currentUserEmail}`);
+            if (!response.ok) throw new Error(`Network response was not ok (${response.status})`);
+            const history = await response.json();
+            dom.history.loading.classList.add('hidden');
+            if (history.length === 0) { dom.history.empty.classList.remove('hidden'); }
+            else {
+                history.forEach((item, index) => {
+                    const cardWrapper = document.createElement('div');
+                    cardWrapper.className = 'animate-reveal';
+                    cardWrapper.style.transitionDelay = `${index * 80}ms`;
+
+                    const card = dom.templates.historyCard.content.cloneNode(true);
+                    const rawData = JSON.parse(item.raw_data_json || '{}');
+                    const aiPred = rawData.internal_specialist_analysis?.prediction || 'N/A';
+                    const finalLabel = item.corrected_label || aiPred;
+                    const isCorrected = !!item.corrected_label;
+
+                    // Use heatmap as thumbnail if available
+                    let thumbnailUrl = item.heatmap_image_base64 || 'https://placehold.co/600x400/f5f5f4/57534e?text=No+Preview';
+                    card.querySelector('[data-id="thumbnail"]').src = thumbnailUrl; 
+                    card.querySelector('[data-id="finalLabel"]').textContent = finalLabel;
+                    card.querySelector('[data-id="date"]').textContent = new Date(item.analysis_timestamp).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+                    
+                    const status = card.querySelector('[data-id="status"]');
+                    status.textContent = isCorrected ? 'Corrected' : 'AI Result';
+                    status.className += isCorrected ? ' bg-green-100 text-green-800' : ' bg-yellow-100 text-yellow-800';
+                    
+                    card.firstElementChild.onclick = () => viewHistoryItem(item); // Use corrected function
+                    cardWrapper.appendChild(card);
+                    dom.history.container.appendChild(cardWrapper);
+                    
+                    requestAnimationFrame(() => cardWrapper.classList.add('is-visible'));
+                });
+            }
+        } catch (e) {
+            dom.history.loading.classList.add('hidden'); 
+            dom.history.container.innerHTML = `<p class="text-red-500 text-center col-span-full">Error: ${e.message}. Please try again later.</p>`;
+        }
+    }
+
+    async function handleCorrectionSubmit() {
+        const btn = document.getElementById('submitCorrectionBtn'); 
+        const msg = document.getElementById('correctionMessage');
+        if (!btn || !msg) return; // Guard clause
+        
+        btn.disabled = true; msg.textContent = 'Saving...'; msg.className = 'text-sm mt-2 text-stone-600';
+        const corrected_label = document.getElementById('correctionInput').value;
+        try {
+            // ** CORRECTED LINES BELOW **
+            const response = await fetch(`/correct_prediction/${currentAnalysisId}`, { 
+                method: 'PUT', // Use PUT method
+                headers: {'Content-Type': 'application/json'}, 
+                body: JSON.stringify({ corrected_label, user_email: currentUserEmail }) // Send data in body
+            });
+            // ** END CORRECTION **
+            if (!response.ok) { 
+                const errorData = await response.json().catch(() => ({})); 
+                throw new Error(errorData.detail || 'Failed to save correction.'); 
+            }
+            const result = await response.json();
+            renderAnalysisResult(result); // Re-render with the corrected data
+            // Access the message element *after* re-rendering
+            const updatedMsg = document.getElementById('correctionMessage');
+            if(updatedMsg) { updatedMsg.textContent = 'Correction saved successfully!'; updatedMsg.className = 'text-sm mt-2 text-green-600'; }
+        } catch (error) {
+            if(msg) { msg.textContent = error.message; msg.className = 'text-sm mt-2 text-red-600'; }
+        } finally {
+            // Re-query the button after potential re-render
+             const updatedBtn = document.getElementById('submitCorrectionBtn');
+             if(updatedBtn) updatedBtn.disabled = false;
+        }
+    }
+</script>
+</body>
+</html>
+

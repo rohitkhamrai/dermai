@@ -1,0 +1,19 @@
+# data and generated files
+data/
+logs/
+lightning_logs/
+analysis_history.db
+*.png # this will ignore all png files in the root, adjust if you have important pngs
+.env # often contains sensitive info
+
+# python specific ignores
+__pycache__/
+*.pyc
+*.log
+.ipynb_checkpoints/
+.pytest_cache/
+.vscode/
+
+# lightning studio specific ignores (if not already handled by default)
+.lightning_studio/
+.kaggle/
