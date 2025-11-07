@@ -4,7 +4,7 @@ import os
 
 # --- Configuration ---
 # Your personal OpenRouter API key is included as requested.
-OPENROUTER_API_KEY = "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" 
+OPENROUTER_API_KEY = "key here" 
 
 # --- API Details (Using the proven, working models) ---
 OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions"
